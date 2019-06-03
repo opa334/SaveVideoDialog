@@ -19,18 +19,6 @@
 volatile BOOL preventWrongSave;
 volatile BOOL recordingStoppedThroughButton;
 
-@interface SVDAlertRootViewController : UIViewController
-@end
-
-@implementation SVDAlertRootViewController
-
-- (BOOL)prefersStatusBarHidden
-{
-	return YES;
-}
-
-@end
-
 #import <Photos/Photos.h>
 
 %hook CAMPersistenceController
@@ -44,8 +32,7 @@ volatile BOOL recordingStoppedThroughButton;
 
 		dispatch_async(dispatch_get_main_queue(), ^
 		{
-			__block UIWindow* window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
-			window.rootViewController = [[SVDAlertRootViewController alloc] init];
+			UIViewController* rootViewController = [[[[UIApplication sharedApplication] delegate] window] rootViewController];
 
 			UIAlertController* alertController = [UIAlertController alertControllerWithTitle:@"Keep Video?" message:@"" preferredStyle:UIAlertControllerStyleAlert];
 
@@ -54,13 +41,10 @@ volatile BOOL recordingStoppedThroughButton;
 				%orig;
 
 				preventWrongSave = NO;
-				window = nil;
 			}];
 
 			UIAlertAction* noAction = [UIAlertAction actionWithTitle:@"No" style:UIAlertActionStyleDestructive handler:^(UIAlertAction* action)
 			{
-				window = nil;
-
 				__block NSString* localIdentifier;
 
 				[[PHPhotoLibrary sharedPhotoLibrary] performChanges:^
@@ -85,8 +69,7 @@ volatile BOOL recordingStoppedThroughButton;
 			[alertController addAction:noAction];
 			[alertController addAction:yesAction];
 
-			[window makeKeyAndVisible];
-			[window.rootViewController presentViewController:alertController animated:YES completion:nil];
+			[rootViewController presentViewController:alertController animated:YES completion:nil];
 		});
 	}
 	else
